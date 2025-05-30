@@ -43,7 +43,8 @@ response = requests.post(
 print(response)
 data = response
 courses = data['datas']['arrangedList']
-
+from flask import Flask, jsonify, request
+app = Flask(__name__)
 day_mapping = {
     1: '星期一',
     2: '星期二',
@@ -53,23 +54,36 @@ day_mapping = {
     6: '星期六',
     7: '星期日'
 }
-for course in courses:
-    name = course.get('courseName', '无课程名')
-    day = day_mapping.get(course.get('dayOfWeek', 0), '未知')
-    start = course.get('beginTime', '未知')
-    end = course.get('endTime', '未知')
-    place = course.get('placeName', '未知')
-    teacher_info = course.get('weeksAndTeachers', '未知')
 
-    if teacher_info != '未知':
-        parts = teacher_info.split('/')
-        weeks = parts[0].split('[')[0]
-        teacher = parts[1].split('[')[0].strip()
-    else:
-        weeks = '未知'
-        teacher = '未知'
-    print(f"课程名称：{name}")
-    print(f"上课时间：{day} {start} - {end}")
-    print(f"上课地点：{place}")
-    print(f"授课安排：{weeks}")
-    print(f"授课教师：{teacher}")
+@app.route('/api/courses', methods=['GET'])
+def get_courses():
+    formatted_courses = []
+    for course in courses:
+        name = course.get('courseName', '无课程名')
+        day = day_mapping.get(course.get('dayOfWeek', 0), '未知')
+        start = course.get('beginTime', '未知')
+        end = course.get('endTime', '未知')
+        place = course.get('placeName', '未知')
+        teacher_info = course.get('weeksAndTeachers', '未知')
+
+        if teacher_info != '未知':
+            parts = teacher_info.split('/')
+            weeks = parts[0].split('[')[0]
+            teacher = parts[1].split('[')[0].strip()
+        else:
+            weeks = '未知'
+            teacher = '未知'
+
+        formatted_course = {
+            "课程名称": name,
+            "上课时间": f"{day} {start} - {end}",
+            "上课地点": place,
+            "授课安排": weeks,
+            "授课教师": teacher
+        }
+        formatted_courses.append(formatted_course)
+
+    return jsonify(formatted_courses)
+
+if __name__ == '__main__':
+    app.run(debug=True)
